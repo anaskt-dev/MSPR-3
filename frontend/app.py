@@ -1,13 +1,12 @@
 import streamlit as st
-import requests
-# import plotly.express as px # Commenté car plotly.graph_objects est utilisé pour les graphiques plus complexes.
 import pandas as pd # Essentiel pour la manipulation des données (DataFrames).
 from auth import login, register, get_token, logout, get_with_auth, post_with_auth # Fonctions d'authentification et d'interaction avec l'API.
-from datetime import date # Utilisé pour la sélection de date dans la prédiction.
+from datetime import date, timedelta # Utilisé pour la sélection de date dans la prédiction.
 from streamlit_option_menu import option_menu # Pour la barre de navigation latérale moderne.
 import plotly.graph_objects as go # Utilisé pour la création de graphiques interactifs.
 import numpy as np # Utilisé pour les opérations numériques, notamment dans la simulation de données si besoin.
 import pydeck as pdk # Utilisé pour la visualisation des données géospatiales sur une carte.
+import streamlit_echarts as st_echarts
 
 # --- Initialisation de st.session_state ---
 # Ces variables maintiennent l'état de l'application à travers les différentes exécutions du script.
@@ -22,6 +21,20 @@ if "lang" not in st.session_state:
 
 # --- CONFIGURATION DU THÈME ET DE LA PAGE ---
 st.set_page_config(page_title="MSPR IA Pandémies", layout="wide") # Configure le titre de l'onglet du navigateur et le layout large de l'application.
+
+# Affiche le message de couverture des données pour le pays sélectionné, tout en haut de la page, centré, très gros, bleu, en gras, comme le titre principal
+banner_msg = ""
+if st.session_state["country"] == "France":
+    banner_msg = "🇫🇷 Les données affichées couvrent l'ensemble du territoire français."
+elif st.session_state["country"] == "Switzerland":
+    banner_msg = "🇨🇭 Les données affichées couvrent l'ensemble du territoire suisse."
+elif st.session_state["country"] == "US":
+    banner_msg = "🇺🇸 Les données affichées couvrent l'ensemble du territoire américain."
+
+if banner_msg:
+    st.markdown(f'''
+        <h1 style="color:#1976d2; text-align:center; font-size:2.8rem; font-weight:bold; margin-bottom: 2.5rem;">{banner_msg}</h1>
+    ''', unsafe_allow_html=True)
 
 # --- DÉFINITION DES TRADUCTIONS ---
 # Dictionnaire imbriqué contenant toutes les chaînes de caractères de l'interface utilisateur,
@@ -319,16 +332,6 @@ if get_token() and not user:
 # --- AFFICHAGE DU PROFIL UTILISATEUR EN SIDEBAR ---
 # Affiche le nom d'utilisateur et l'email de l'utilisateur connecté dans la barre latérale.
 # Cette section n'apparaît que si un utilisateur est connecté.
-if user:
-    st.sidebar.markdown(
-        f"""
-        <div style='text-align:center; margin-bottom:1rem;'>
-            <img src='https://img.icons8.com/ios-filled/50/1976d2/user-male-circle.png' width='40'/>
-            <div style='font-size:1.1rem; color:#1976d2;'><b>{user['username']}</b></div>
-            <div style='font-size:0.9rem; color:#888;'>{user['email']}</div>
-        </div>
-        """, unsafe_allow_html=True
-    )
 
 with st.sidebar:
     # --- BARRE LATÉRALE DE NAVIGATION (SIDEBAR) ---
@@ -340,6 +343,15 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True
     )
+    if user:
+        st.markdown(
+            f"""
+            <div style='text-align:center; margin-bottom:1rem;'>
+                <div style='font-size:1.1rem; color:#1976d2;'><b>{user['username']}</b></div>
+                <div style='font-size:0.9rem; color:#888;'>{user['email']}</div>
+            </div>
+            """, unsafe_allow_html=True
+        )
 
     # Définit l'objet de traduction (dictionnaire 't') basé sur la langue actuellement sélectionnée dans la session.
     t = translations[st.session_state["lang"]]
@@ -386,15 +398,14 @@ with st.sidebar:
     # Les options de menu affichées sont dynamiques et dépendent du pays sélectionné,
     # respectant ainsi les règles RGPD définies.
     options = [t["home"], t["login"]]
+    country = st.session_state["country"].strip().lower()
+    if country == "france":
+        options.append(t["data"])
+    elif country == "us":
+        options.extend([t["data"], t["predict"]])
+    elif country == "switzerland":
+        options.append(t["predict"])
     
-    # Logique RGPD spécifique par pays pour l'affichage des onglets de navigation.
-    if st.session_state["country"] == "France":
-        options.append(t["data"])  # France : accès uniquement à l'onglet "Données".
-    elif st.session_state["country"] == "US":
-        options.extend([t["data"], t["predict"]])  # US : accès aux onglets "Données" et "Prédiction IA".
-    elif st.session_state["country"] == "Switzerland":
-        options.append(t["predict"])  # Suisse : accès uniquement à l'onglet "Prédiction IA".
-
     # Définition des icônes correspondantes pour chaque option de menu.
     icons = ["house", "box-arrow-in-right"]
     if t["data"] in options: icons.append("bar-chart") # Ajoute l'icône pour "Données" si l'option est présente.
@@ -432,74 +443,60 @@ with st.sidebar:
 # en fonction de l'option sélectionnée dans le menu de navigation latéral.
 if selected == t["home"]:
     # --- PAGE D'ACCUEIL ---
-    # Cette page fournit une introduction à l'application, des métriques globales de la pandémie
-    # et une carte interactive affichant les cas par pays.
-    st.markdown(f"""
-        <div style='text-align:center; margin-top: 30px;'>
-            <img src='logo-pandemia.png' width='100'/>
-            <h1 style='color:#1976d2; margin-bottom:0; font-size:2.5rem;'>{t['welcome']}</h1>
-            <h3 style='color:#388e3c; margin-top:0; font-size:1.7rem;'>{t['subtitle']}</h3>
-            <p style='font-size:1.2rem; color:#444;'>{t['desc']}</p>
-        </div>
+    # Hero section professionnelle et moderne
+    st.markdown("""
+    <div style='text-align:center; margin-top: 30px; margin-bottom: 0;'>
+        <h1 style='color:#1976d2; font-size:3.2rem; font-weight:900; margin-bottom:0.2em; letter-spacing:1px;'>
+            Bienvenue sur <span style=\"color:#1565c0;\">PandemIA</span>
+        </h1>
+        <h2 style='color:#43a047; font-size:2.1rem; font-weight:700; margin-top:0; margin-bottom:0.7em; letter-spacing:0.5px;'>
+            Anticiper aujourd'hui, protéger demain
+        </h2>
+        <p style='font-size:1.35rem; color:#333; max-width:950px; margin:auto; margin-bottom:0.7em; font-weight:500;'>
+            <b>PandemIA</b> est la plateforme de référence pour le suivi, l'analyse et la prédiction de la pandémie de Covid-19.<br>
+            Pensée pour les professionnels de santé, décideurs et citoyens, elle offre une vision claire, interactive et prédictive de l'évolution mondiale de la pandémie.
+        </p>
+        <ul style='font-size:1.18rem; color:#1976d2; max-width:700px; margin:auto; text-align:left; display:inline-block; font-weight:500;'>
+            <li>Anticipez les tendances épidémiques grâce à l'IA</li>
+            <li>Comparez la situation entre pays avec des visualisations avancées</li>
+            <li>Décidez en toute confiance, dans le respect du RGPD</li>
+        </ul>
+    </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
-    # Création de trois colonnes pour présenter les fonctionnalités clés de l'application avec des icônes et des descriptions.
-    fcol1, fcol2, fcol3 = st.columns(3)
-    with fcol1:
-        st.markdown(f"""
-            <div style='background:#e3f2fd;border-radius:16px;padding:2rem 1rem;box-shadow:0 2px 8px #1976d220;'>
-                <img src='https://img.icons8.com/ios-filled/100/1976d2/activity-history.png' width='48'/><br>
-                <h4 style='color:#1976d2; font-size:1.3rem;'>{t['realtime']}</h4>
-                <p style='color:#388e3c; font-size:1.1rem;'>{t['realtime_desc']}</p>
-            </div>
-        """, unsafe_allow_html=True)
-    with fcol2:
-        st.markdown(f"""
-            <div style='background:#e8f5e9;border-radius:16px;padding:2rem 1rem;box-shadow:0 2px 8px #388e3c20;'>
-                <img src='https://img.icons8.com/ios-filled/100/1976d2/robot-2.png' width='48'/><br>
-                <h4 style='color:#1976d2; font-size:1.3rem;'>{t['ai_pred']}</h4>
-                <p style='color:#388e3c; font-size:1.1rem;'>{t['ai_pred_desc']}</p>
-            </div>
-        """, unsafe_allow_html=True)
-    with fcol3:
-        st.markdown(f"""
-            <div style='background:#fff;border-radius:16px;padding:2rem 1rem;box-shadow:0 2px 8px #1976d220;'>
-                <img src='https://img.icons8.com/ios-filled/100/1976d2/health-checkup.png' width='48'/><br>
-                <h4 style='color:#1976d2; font-size:1.3rem;'>{t['support']}</h4>
-                <p style='color:#388e3c; font-size:1.1rem;'>{t['support_desc']}</p>
-            </div>
-        """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("---")
 
-    # Récupérer toutes les données pour la vue globale depuis le backend via l'API /data.
+    # Section métriques mondiales enrichie
     global_data = get_with_auth("/data")
-
     if global_data:
-        df_global = pd.DataFrame(global_data) # Convertit les données en DataFrame Pandas.
-        df_global["date"] = pd.to_datetime(df_global["date"]) # Convertit la colonne de date au format datetime.
-
-        # Calculer les métriques globales : total des cas confirmés et nombre de pays suivis.
-        total_global_cases = int(df_global["confirmed"].sum()) if not df_global.empty else 0
-        num_countries = df_global["country"].nunique() if not df_global.empty else 0
-
-        st.markdown(f"<h3 style='text-align:center; color:#1976d2; font-size:1.8rem;'>{t['global_cases']}</h3>", unsafe_allow_html=True)
-        col_g1, col_g2 = st.columns(2)
-        with col_g1:
-            st.metric(t["global_cases"], f"{total_global_cases:,}") # Affiche le nombre total de cas mondiaux.
-        with col_g2:
-            st.metric(t["countries_tracked"], num_countries) # Affiche le nombre de pays suivis.
+        df_global = pd.DataFrame(global_data)
+        df_global["date"] = pd.to_datetime(df_global["date"])
+        total_cases = int(df_global["confirmed"].sum())
+        total_deaths = int(df_global["deaths"].sum())
+        total_recovered = int(df_global["recovered"].sum())
+        num_countries = df_global["country"].nunique()
+        # Nouveaux cas du dernier jour global
+        last_date = df_global["date"].max()
+        new_cases = int(df_global[df_global["date"] == last_date]["new_cases"].sum())
+        st.markdown("""
+        <div style='text-align:center; margin-bottom: 1.5rem;'>
+            <h2 style='color:#1976d2;'>Chiffres clés mondiaux</h2>
+            <p style='color:#888; font-size:1.1rem;'>
+                Aperçu global de la pandémie : cas confirmés, décès, guérisons, nouveaux cas et couverture pays.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        col1, col2, col3, col4, col5 = st.columns(5)
+        col1.metric("Cas confirmés", f"{total_cases:,}")
+        col2.metric("Décès", f"{total_deaths:,}")
+        col3.metric("Guérisons", f"{total_recovered:,}")
+        col4.metric("Nouveaux cas (dernier jour)", f"{new_cases:,}")
+        col5.metric("Pays suivis", num_countries)
         st.markdown("---")
 
-        st.markdown(f"<h3 style='text-align:center; color:#1976d2; font-size:1.8rem;'>{t['world_map']} (PyDeck)</h3>", unsafe_allow_html=True)
-        
-        # Pour la carte du monde, agréger les données par pays à la date la plus récente disponible.
-        latest_data_per_country = df_global.loc[df_global.groupby('country')['date'].idxmax()] # Sélectionne la dernière entrée par pays.
-        
-        # IMPORTANT: Ce dictionnaire fournit des coordonnées approximatives (latitude, longitude) pour la démonstration de la carte PyDeck.
-        # Pour une application professionnelle ou une représentation géographique précise et complète,
-        # il serait préférable d'intégrer un fichier GeoJSON des centroïdes de pays ou d'utiliser une API de géocodage.
+        # Carte 1 : Cas confirmés par pays (PyDeck)
+        st.markdown(f"<h3 style='color:#1976d2; text-align:center;'>Cas confirmés par pays (PyDeck)</h3>", unsafe_allow_html=True)
+        st.write("Chaque point représente un pays, la taille indique le nombre de cas confirmés. Survolez un point pour voir le détail.")
+        latest_data_per_country = df_global.loc[df_global.groupby('country')['date'].idxmax()]
         country_coords = {
             "France": (46.603354, 1.888334),
             "US": (37.09024, -95.712891),
@@ -608,62 +605,51 @@ if selected == t["home"]:
             "Somalia": (10.0275, 49.3138),
             "Eritrea": (15.179384, 39.782334),
             "Djibouti": (11.825138, 42.590275),
-            "" : (0,0) # Placeholder for empty/unknown country
+            "": (0,0) # Placeholder for empty/unknown country
         }
-
-        # Filtre les données des pays pour n'inclure que ceux pour lesquels des coordonnées sont définies.
-        countries_with_coords = [c for c in latest_data_per_country['country'].unique() if c in country_coords].copy()
+        countries_with_coords = [c for c in latest_data_per_country['country'].unique() if c in country_coords]
+        countries_missing_coords = [c for c in latest_data_per_country['country'].unique() if c not in country_coords]
         df_map_data = latest_data_per_country[latest_data_per_country['country'].isin(countries_with_coords)].copy()
-        
-        # Assigne les coordonnées de latitude et longitude au DataFrame pour PyDeck.
         df_map_data['lat'] = df_map_data['country'].apply(lambda x: country_coords.get(x, (0,0))[0])
         df_map_data['lon'] = df_map_data['country'].apply(lambda x: country_coords.get(x, (0,0))[1])
-        
-        # Adapte la taille du rayon des points sur la carte en fonction du nombre de cas confirmés.
-        # Une taille de base est ajoutée pour que même les pays avec peu de cas soient visibles.
         max_confirmed = df_map_data['confirmed'].max()
         if max_confirmed > 0:
-            # Échelle le rayon pour une meilleure visibilité, avec un rayon de base.
-            df_map_data['radius'] = (df_map_data['confirmed'] / max_confirmed) * 50000 + 5000 
+            df_map_data['radius'] = (df_map_data['confirmed'] / max_confirmed) * 50000 + 15000
         else:
-            df_map_data['radius'] = 5000 # Rayon par défaut si aucun cas n'est enregistré.
+            df_map_data['radius'] = 15000
+        if df_map_data.empty or df_map_data['lat'].sum() == 0:
+            st.warning("Aucune donnée géolocalisée à afficher sur la carte (vérifiez vos données et les noms de pays).")
+        else:
+            view_state = pdk.ViewState(latitude=0, longitude=0, zoom=1, pitch=0)
+            layer = pdk.Layer(
+                "ScatterplotLayer",
+                data=df_map_data,
+                get_position="[lon, lat]",
+                get_color="[255, 140, 0, 160]",
+                get_radius="radius",
+                pickable=True,
+                auto_highlight=True,
+            )
+            st.pydeck_chart(pdk.Deck(
+                map_style="mapbox://styles/mapbox/dark-v10",
+                initial_view_state=view_state,
+                layers=[layer],
+            ))
+        st.caption("Carte interactive : chaque point correspond à un pays, la taille du point est proportionnelle au nombre de cas confirmés.")
+        if countries_missing_coords:
+            st.warning(f"Pays non géolocalisés (à ajouter dans le dictionnaire) : {', '.join(countries_missing_coords)}")
+        st.markdown("---")
 
-        # Crée l'état initial de la vue de la carte PyDeck.
-        view_state = pdk.ViewState(
-            latitude=0, # Centre la carte sur l'équateur (latitude 0).
-            longitude=0,
-            zoom=1, # Niveau de zoom initial, montrant une vue globale.
-            pitch=0,
-        )
-
-        # Définit la couche de points (ScatterplotLayer) pour la carte PyDeck.
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=df_map_data,
-            get_position="[lon, lat]", # Spécifie les colonnes pour les positions longitude et latitude.
-            get_color="[255, 140, 0, 160]", # Définit la couleur des points (orange avec transparence).
-            get_radius="radius", # Utilise la colonne 'radius' calculée pour la taille des points.
-            pickable=True, # Rend les points interactifs (infos-bulles au survol/clic).
-            auto_highlight=True, # Active le surlignage automatique des points au survol.
-        )
-
-        # Affiche la carte PyDeck dans l'application Streamlit avec un thème sombre.
-        st.pydeck_chart(pdk.Deck(
-            map_style="mapbox://styles/mapbox/dark-v10", # Utilise un style de carte sombre de Mapbox.
-            initial_view_state=view_state,
-            layers=[layer],
-        ))
     else:
-        st.info(t["no_data"]) # Affiche un message si aucune donnée n'est disponible pour la carte.
+        st.info(t["no_data"])
 
+    # Section équipe et conclusion
     st.markdown("""
     <div style='text-align:center; margin-top: 30px;'>
         <h2 style='color:#1976d2; font-size:2rem;'>Qui sommes-nous ?</h2>
     </div>
     """, unsafe_allow_html=True)
     st.write(f"<p style='font-size:1.1rem; text-align:center;'>{t['team_desc']}</p>", unsafe_allow_html=True)
-
-    # Section de présentation de l'équipe (composée de 4 colonnes pour chaque membre).
     col_team1, col_team2, col_team3, col_team4 = st.columns(4)
     with col_team1:
         st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=100)
@@ -677,15 +663,7 @@ if selected == t["home"]:
     with col_team4:
         st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=100)
         st.markdown("<p style='text-align:center;'><b>Romance</b><br/>Développeur fullstack</p>", unsafe_allow_html=True)
-
     st.markdown("---")
-    # Affichage d'informations spécifiques au pays sélectionné (règles RGPD) en bas de la page d'accueil.
-    if st.session_state["country"] == "France":
-        st.info("🇫🇷 Les données affichées couvrent l'ensemble du territoire français.")
-    elif st.session_state["country"] == "Switzerland":
-        st.info("🇨🇭 Les données affichées couvrent l'ensemble du territoire suisse.")
-    elif st.session_state["country"] == "US":
-        st.info("🇺🇸 Les données affichées couvrent l'ensemble du territoire américain.")
 
 elif selected == t["login"]:
     # --- PAGE DE CONNEXION / INSCRIPTION ---
@@ -705,17 +683,21 @@ elif selected == t["login"]:
                 st.experimental_rerun() # Recharge l'application pour refléter le nouvel état (ex: affichage de nouvelles options de menu).
     with tab2:
         # Formulaire d'inscription.
-        username = st.text_input(f"{t['username']} ({t['register_tab']})")
-        email = st.text_input(t["email"])
-        password = st.text_input(f"{t['password']} ({t['register_tab']})", type="password")
-        country_register = st.selectbox(f"{t['country']} ({t['register_tab']})", ["France", "Switzerland", "US"], key="country_register")
-        if st.button(t["register_btn"]):
-            # Tente d'enregistrer un nouvel utilisateur via la fonction `register` du module `auth`.
-            if register(username, email, password, country_register): 
-                st.success(t["register_success"]) # Message de succès si l'inscription est réussie.
-                st.experimental_rerun()
-            else:
-                st.error(t["register_error"]) # Message d'erreur en cas d'échec de l'inscription.
+        with st.expander(t["register_tab"]):
+            with st.form("register_form"):
+                reg_username = st.text_input(t["username"], key="reg_user")
+                reg_email = st.text_input(t["email"], key="reg_email")
+                reg_password = st.text_input(t["password"], type="password", key="reg_pass")
+                reg_country = st.selectbox(t["country"], options=st.session_state.get("available_countries", ["France"]), key="reg_country")
+                
+                submitted = st.form_submit_button(t["register_btn"])
+                if submitted:
+                    success, message = register(reg_username, reg_email, reg_password, reg_country)
+                    if success:
+                        st.success(t["register_success"])
+                    else:
+                        st.error(f'{t["register_error"]}: {message}')
+
     # Affiche un bouton de déconnexion si l'utilisateur est connecté (vérifié par la présence d'un token).
     if get_token():
         if st.button(t["logout"]):
@@ -913,13 +895,6 @@ elif selected == t["data"]:
             st.error(t["data_error"]) # Gère l'erreur si les données ne peuvent pas être récupérées pour le pays sélectionné.
     # Affiche le pays actuellement sélectionné pour la page de données à des fins d'information utilisateur.
     st.markdown(f"<div style='text-align:right; color:#1976d2; font-size:1.1rem;'><b>Pays sélectionné : {st.session_state['country']}</b></div>", unsafe_allow_html=True)
-    # Affiche des informations spécifiques au pays concernant la couverture des données (règles RGPD).
-    if st.session_state["country"] == "France":
-        st.info("🇫🇷 Les données affichées couvrent l'ensemble du territoire français.")
-    elif st.session_state["country"] == "Switzerland":
-        st.info("🇨🇭 Les données affichées couvrent l'ensemble du territoire suisse.")
-    elif st.session_state["country"] == "US":
-        st.info("🇺🇸 Les données affichées couvrent l'ensemble du territoire américain.")
 
 elif selected == t["predict"]:
     # --- PAGE PRÉDICTION IA ---
@@ -940,43 +915,42 @@ elif selected == t["predict"]:
         if all_data:
             df_all = pd.DataFrame(all_data)
             available_countries = sorted(df_all['country'].unique().tolist()) # Crée une liste unique et triée des pays.
-            
-            # Le formulaire de prédiction est encapsulé dans un conteneur pour une meilleure présentation et isolation UI.
             with st.container(border=True):
                 with st.form("prediction_form"):
-                    # Sélecteur de pays pour la prédiction. La liste des options est dynamique.
                     country_predict = st.selectbox(t["country"],
                                                 available_countries,
                                                 key="predict_country_select")
-                    # Sélecteur de date pour la prédiction, avec la date du jour comme valeur par défaut.
                     future_date = st.date_input(t["date"], value=date.today(), key="prediction_date_input")
-                    # Bouton de soumission du formulaire pour lancer la prédiction.
                     submitted = st.form_submit_button(t["predict_btn"], use_container_width=True)
-                
-                # Logique exécutée après la soumission du formulaire de prédiction.
                 if submitted:
-                    with st.spinner("Prédiction en cours..."): # Affiche un indicateur de chargement pour l'utilisateur.
-                        # Construction du payload (corps de la requête) pour l'API de prédiction.
-                        prediction_payload = {
-                            "country": country_predict,
-                            "future_date": str(future_date)
-                        }
-                        # Envoie la requête POST au backend pour obtenir la prédiction.
-                        # NOTE: La logique de prédiction dans le backend (backend/routes.py) est actuellement une simulation (doublant les derniers cas confirmés).
-                        # Pour une implémentation complète, un modèle de machine learning entraîné (ex: avec scikit-learn, TensorFlow, PyTorch)
-                        # devrait être intégré ici, utilisant des caractéristiques historiques pour prédire les cas futurs.
-                        result = post_with_auth("/predict", prediction_payload) 
-                    # Affiche les résultats de la prédiction ou un message d'erreur si la prédiction échoue.
-                    if result:
-                        st.success("Prédiction terminée !")
-                        st.subheader(t["result"])
-                        st.write(f"**Pays :** {country_predict}")
-                        st.write(f"**Date de prédiction :** {future_date}")
-                        st.write(f"**{t['result']} :** {result['prediction']:.2f}")
-                        st.write(f"**{t['score']} :** {result['score']:.2f}")
-                    else:
-                        st.error(t["predict_error"]) # Message d'erreur si la prédiction a échoué.
+                    with st.spinner("Prédiction en cours..."):
+                        days = (future_date - date.today()).days
+                        if days < 0:
+                            st.error("La date de prédiction doit être postérieure ou égale à aujourd'hui.")
+                        else:
+                            prediction_payload = {
+                                "country": country_predict,
+                                "days": days if days > 0 else 1,  # Si la date est aujourd'hui, prédire 1 jour
+                                "prediction_type": "cases"
+                            }
+                            result = post_with_auth("/predict", prediction_payload)
+                            if result:
+                                st.success("Prédiction terminée !")
+                                st.subheader(t["result"])
+                                st.write(f"**Pays :** {country_predict}")
+                                st.write(f"**Jours prédits :** {days if days > 0 else 1}")
+                                st.write("**Prédictions :**")
+                                for i, pred in enumerate(result.get("predictions", []), 1):
+                                    st.write(f"Jour {i} : {pred['predicted_value']}")
+                            else:
+                                # Afficher le message d'erreur détaillé du backend si disponible
+                                if hasattr(result, 'get') and result.get('detail'):
+                                    st.error(f"Erreur API : {result['detail']}")
+                                else:
+                                    st.error(t["predict_error"])
         else:
             st.error(t["data_error"]) # Gère l'erreur si les données des pays ne peuvent pas être récupérées pour le sélecteur de prédiction.
 
 # --- FIN DU FICHIER APP.PY --- 
+
+# --- Suppression des fonctions de cache inutilisées --- 

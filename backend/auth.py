@@ -63,26 +63,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM) # Encode le JWT.
     return encoded_jwt
 
-@router.post("/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    """Endpoint pour la connexion des utilisateurs et la génération d'un jeton d'accès JWT."""
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        # Lève une exception HTTP 401 si l'authentification échoue.
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    # Calcule la durée d'expiration du jeton.
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    # Crée le jeton d'accès avec le nom d'utilisateur comme sujet (sub).
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    # Retourne le jeton d'accès et son type (bearer).
-    return {"access_token": access_token, "token_type": "bearer"}
-
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
     """Récupère et valide l'utilisateur courant à partir du jeton d'authentification fourni."""
     credentials_exception = HTTPException(
@@ -109,4 +89,34 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         logger.error(f"User not found for username: {username}") # Log l'erreur si l'utilisateur n'est pas trouvé.
         raise credentials_exception
     logger.debug(f"Found user: {user.username}") # Log l'utilisateur trouvé.
-    return user # Retourne l'objet utilisateur. 
+    return user # Retourne l'objet utilisateur.
+
+@router.post("/token", response_model=schemas.Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+    """Endpoint pour la connexion des utilisateurs et la génération d'un jeton d'accès JWT."""
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        # Lève une exception HTTP 401 si l'authentification échoue.
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # Calcule la durée d'expiration du jeton.
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Crée le jeton d'accès avec le nom d'utilisateur comme sujet (sub).
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    # Retourne le jeton d'accès et son type (bearer).
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/login", response_model=schemas.Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+    """Endpoint alternatif pour la connexion (alias de /token)."""
+    return await login_for_access_token(form_data, db)
+
+@router.get("/users/me", response_model=schemas.UserOut)
+async def read_users_me(current_user: models.User = Depends(get_current_user)):
+    """Endpoint pour récupérer les informations de l'utilisateur connecté."""
+    return current_user 

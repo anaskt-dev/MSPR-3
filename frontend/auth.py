@@ -7,17 +7,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Récupérer l'URL de l'API depuis les variables d'environnement
-API_URL = os.getenv('API_URL', 'http://localhost:8001/api')
+API_URL = os.getenv('API_URL', 'http://localhost:8000/api')
 
 def register(username, email, password, country, is_admin=False):
     payload = {"username": username, "email": email, "password": password, "country": country, "is_admin": is_admin}
-    r = requests.post(f"{API_URL}/register", json=payload)
-    if r.status_code == 200:
-        st.success("Inscription réussie ! Veuillez vous connecter.")
-        return True
-    else:
-        st.error(f"Erreur d'inscription : {r.text}")
-        return False
+    try:
+        r = requests.post(f"{API_URL}/register", json=payload)
+        if r.status_code == 200:
+            return True, "Inscription réussie ! Veuillez vous connecter."
+        else:
+            # On tente d'extraire un message d'erreur précis
+            try:
+                error_msg = r.json().get("detail", r.text)
+            except Exception:
+                error_msg = r.text
+            return False, error_msg
+    except Exception as e:
+        return False, f"Erreur de connexion au serveur : {str(e)}"
 
 def login(username, password):
     data = {"username": username, "password": password}

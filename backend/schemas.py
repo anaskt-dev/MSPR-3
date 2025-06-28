@@ -7,8 +7,8 @@ from datetime import datetime, date
 # UserBase: Schéma de base pour les utilisateurs, définissant les champs communs.
 class UserBase(BaseModel):
     username: str # Nom d'utilisateur (chaîne de caractères).
-    email: EmailStr # Adresse email, validée comme un format d'email standard.
-    country: str # Pays de l'utilisateur.
+    email: Optional[EmailStr] = None # Adresse email, validée comme un format d'email standard.
+    country: Optional[str] = None # Pays de l'utilisateur.
 
 # UserCreate: Schéma utilisé pour la création d'un nouvel utilisateur.
 # Hérite de UserBase et ajoute le champ 'password'.
@@ -24,7 +24,7 @@ class UserOut(UserBase):
     
     # Configuration interne de Pydantic pour mapper les attributs des objets SQLAlchemy aux champs Pydantic.
     class Config:
-        from_attributes = True # Ancien `orm_mode = True` pour la compatibilité avec SQLAlchemy.
+        orm_mode = True
 
 # --- Schémas pour les Données COVID-19 ---
 
@@ -33,11 +33,11 @@ class DataIn(BaseModel):
     date: date # Date de l'enregistrement.
     country: str # Pays concerné.
     confirmed: int # Nombre de cas confirmés.
-    deaths: int # Nombre de décès.
-    recovered: int # Nombre de cas guéris.
-    new_cases: int # Nombre de nouveaux cas.
-    new_deaths: int # Nombre de nouveaux décès.
-    new_recovered: int # Nombre de nouveaux cas guéris.
+    deaths: Optional[int] = 0 # Nombre de décès.
+    recovered: Optional[int] = 0 # Nombre de cas guéris.
+    new_cases: Optional[int] = 0 # Nombre de nouveaux cas.
+    new_deaths: Optional[int] = 0 # Nombre de nouveaux décès.
+    new_recovered: Optional[int] = 0 # Nombre de nouveaux cas guéris.
 
 # DataOut: Schéma pour la sortie (réponse) des données COVID-19.
 # Hérite de DataIn et ajoute le champ 'id' généré par la base de données.
@@ -46,23 +46,33 @@ class DataOut(DataIn):
 
     # Configuration pour le mappage avec les attributs SQLAlchemy.
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 # --- Schémas pour la Prédiction IA ---
 
 # PredictionIn: Schéma pour l'entrée des paramètres de la prédiction IA.
 class PredictionIn(BaseModel):
     country: str # Pays pour lequel la prédiction est demandée.
-    future_date: date # Date future pour laquelle la prédiction est demandée.
-    # region: str # Commenté: Pourrait être utilisé pour des prédictions plus granulaires (future extension).
-    # location: str # Commenté: Idem.
-    # construction: str # Commenté: Idem.
-    # value: float # Commenté: Idem.
+    days: int # Nombre de jours à prédire (1-30).
+    prediction_type: str # Type de prédiction: "cases", "deaths", ou "recovered".
 
 # PredictionOut: Schéma pour la sortie (réponse) de la prédiction IA.
 class PredictionOut(BaseModel):
-    prediction: float # La valeur prédite (ex: nombre de cas).
-    score: float # Un score de confiance ou de performance du modèle (exemple: 0.8).
+    country: str
+    prediction_type: str
+    days: int
+    predictions: list # Liste des prédictions par jour
+
+# Ancien schéma pour compatibilité (à supprimer plus tard)
+class PredictionInOld(BaseModel):
+    country: str # Pays pour lequel la prédiction est demandée.
+    future_date: date # Date future pour laquelle la prédiction est demandée.
+
+class PredictionOutOld(BaseModel):
+    predicted_cases: float
+    predicted_deaths: float
+    predicted_recovered: float
+    confidence: float
 
 # --- Schémas pour l'Authentification (Jetons) ---
 
