@@ -74,12 +74,21 @@ def logout():
 
 def get_with_auth(path, params=None):
     token = get_token()
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    if not token:
+        st.error("Vous devez être connecté pour accéder à cette ressource.")
+        return None
+    headers = {"Authorization": f"Bearer {token}"}
     try:
         response = requests.get(f"{API_URL}{path}", headers=headers, params=params)
         if response.status_code == 200:
             return response.json()
-        return None
+        else:
+            try:
+                error_msg = response.json().get("detail", f"Erreur API ({response.status_code})")
+            except Exception:
+                error_msg = f"Erreur API ({response.status_code})"
+            st.error(error_msg)
+            return None
     except Exception as e:
         st.error(f"Erreur API: {e}")
         return None
@@ -88,12 +97,21 @@ def get_with_auth(path, params=None):
 
 def post_with_auth(path, payload):
     token = get_token()
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    if not token:
+        st.error("Vous devez être connecté pour accéder à cette ressource.")
+        return None
+    headers = {"Authorization": f"Bearer {token}"}
     try:
         response = requests.post(f"{API_URL}{path}", headers=headers, json=payload)
         if response.status_code == 200:
             return response.json()
-        return None
+        else:
+            try:
+                error_msg = response.json().get("detail", f"Erreur API ({response.status_code})")
+            except Exception:
+                error_msg = f"Erreur API ({response.status_code})"
+            st.error(error_msg)
+            return None
     except Exception as e:
         st.error(f"Erreur API: {e}")
         return None 

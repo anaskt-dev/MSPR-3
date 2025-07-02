@@ -10,7 +10,7 @@ def render_login(t, login, register, get_token, logout, get_with_auth, post_with
         if st.button(t["login_btn"]):
             if login(username, password):
                 st.session_state["logged_in"] = True
-                st.experimental_rerun()
+                st.rerun()
     with tab2:
         with st.expander(t["register_tab"]):
             with st.form("register_form"):
@@ -29,6 +29,6 @@ def render_login(t, login, register, get_token, logout, get_with_auth, post_with
         if st.button(t["logout"]):
             logout()
             st.success(t["disconnect"]) 
-            st.experimental_rerun()
+            st.rerun()
     st.markdown("<div style='height: 10 vh'></div>", unsafe_allow_html=True)
     render_footer() 
