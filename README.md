@@ -132,9 +132,9 @@ streamlit run app.py
 ## 🤖 Intégration et fonctionnement du modèle IA
 
 ### Intégration des modèles
-- Deux modèles de prédiction sont intégrés dans le backend : **Prophet** (sérialisé en `.pkl`) et **LSTM** (sauvegardé en `.h5`).
+- Modèle de prédiction Prophet (sérialisé en `.pkl`).
 - Les modèles sont stockés dans `backend/models_and_results/`.
-- Lors d'une requête de prédiction, le backend charge dynamiquement le modèle choisi.
+- Lors d'une requête de prédiction, le backend charge dynamiquement le modèle Prophet.
 
 ### Fonctionnement de la prédiction
 - L'API `/api/predict` reçoit un payload avec :
@@ -150,7 +150,6 @@ streamlit run app.py
   "country": "France",
   "days": 7,
   "prediction_type": "cases",
-  "model": "prophet",
   "reference_date": "2020-07-01"
 }
 ```
