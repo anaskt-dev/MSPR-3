@@ -5,7 +5,6 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.main import app
 from backend.database import Base, get_db
-from backend import models
 
 # Créer une base de test en mémoire SQLite
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -14,6 +13,8 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Crée la DB et les tables pour chaque test
+
+
 @pytest.fixture(scope="function")
 def db():
     Base.metadata.create_all(bind=engine)
@@ -25,6 +26,8 @@ def db():
     Base.metadata.drop_all(bind=engine)
 
 # Override la dépendance get_db pour utiliser la DB de test
+
+
 @pytest.fixture(scope="function")
 def client(db):
     def override_get_db():
@@ -37,6 +40,7 @@ def client(db):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+
 
 def test_register_user(client):
     # Données de l'utilisateur à enregistrer
@@ -52,6 +56,7 @@ def test_register_user(client):
     assert data["username"] == "testuser"
     assert data["email"] == "test@example.com"
     assert "hashed_password" not in data  # Assure que le hash ne ressort pas
+
 
 def test_register_duplicate_user(client):
     user_data = {
