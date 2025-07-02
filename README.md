@@ -183,9 +183,9 @@ pytest --cov=backend --cov-report=html backend/tests/
 
 ## 👥 Auteurs
 - Anas – Développeur IA
-- Laura – Fullstack & DevOps
-- Akram – DevOps
-- Romance – Fullstack
+- Laura – Développeur IA
+- Akram – Fullstack & DevOps
+- Romance –  DevOps
 
 ---
 
