@@ -33,6 +33,13 @@ def login(username, password):
 # Inscription utilisateur
 
 def register(username, email, password, country, is_admin=False):
+    # Validation côté frontend
+    if not username or not email or not password or not country:
+        return False, "Tous les champs sont obligatoires."
+    if "@" not in email or "." not in email:
+        return False, "L'email n'est pas valide."
+    if len(password) < 6:
+        return False, "Le mot de passe doit contenir au moins 6 caractères."
     payload = {
         "username": username,
         "email": email,
@@ -41,10 +48,16 @@ def register(username, email, password, country, is_admin=False):
     }
     try:
         response = requests.post(f"{API_URL}/register", json=payload)
-        return response.status_code == 200
+        if response.status_code == 200:
+            return True, "Inscription réussie"
+        else:
+            try:
+                error_msg = response.json().get("detail", "Erreur lors de l'inscription")
+            except Exception:
+                error_msg = "Erreur lors de l'inscription"
+            return False, error_msg
     except Exception as e:
-        st.error(f"Erreur d'inscription: {e}")
-        return False
+        return False, f"Erreur d'inscription: {e}"
 
 # Récupérer le token JWT
 
