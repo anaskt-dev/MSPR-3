@@ -10,7 +10,7 @@ import models
 # Importe les routeurs définis dans `routes.py` pour les endpoints de l'API (données, prédiction).
 from routes import router as api_router
 # Importe le routeur d'authentification défini dans `auth.py`.
-from auth import router as auth_router
+import auth
 import data_loader
 from sqlalchemy import text
 
@@ -54,4 +54,4 @@ import_initial_data()
 app.include_router(api_router, prefix="/api")
 # Inclut le routeur d'authentification sous le même préfixe '/api'.
 # Les routes d'authentification (ex: /api/login, /api/register) seront accessibles.
-app.include_router(auth_router, prefix="/api") 
+app.include_router(auth.router, prefix="/api") 

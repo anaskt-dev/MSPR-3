@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
-from datetime import datetime, date
+from typing import Optional, List
+import datetime
 
 # --- Schémas pour les Utilisateurs ---
 
@@ -20,7 +20,7 @@ class UserCreate(UserBase):
 class UserOut(UserBase):
     id: int # ID unique de l'utilisateur.
     is_admin: bool # Statut d'administrateur (booléen).
-    created_at: datetime # Date et heure de création du compte.
+    created_at: datetime.datetime # Date et heure de création du compte.
     
     # Configuration interne de Pydantic pour mapper les attributs des objets SQLAlchemy aux champs Pydantic.
     class Config:
@@ -30,7 +30,7 @@ class UserOut(UserBase):
 
 # DataIn: Schéma pour l'entrée de données COVID-19 (lors de l'ajout de nouvelles données).
 class DataIn(BaseModel):
-    date: date # Date de l'enregistrement.
+    date: datetime.date # Date de l'enregistrement.
     country: str # Pays concerné.
     confirmed: int # Nombre de cas confirmés.
     deaths: Optional[int] = 0 # Nombre de décès.
@@ -55,6 +55,8 @@ class PredictionIn(BaseModel):
     country: str # Pays pour lequel la prédiction est demandée.
     days: int # Nombre de jours à prédire (1-30).
     prediction_type: str # Type de prédiction: "cases", "deaths", ou "recovered".
+    model: Optional[str] = 'prophet'  # 'prophet' ou 'lstm'
+    reference_date: Optional[str] = None  # Date de référence historique (format ISO)
 
 # PredictionOut: Schéma pour la sortie (réponse) de la prédiction IA.
 class PredictionOut(BaseModel):
@@ -66,7 +68,7 @@ class PredictionOut(BaseModel):
 # Ancien schéma pour compatibilité (à supprimer plus tard)
 class PredictionInOld(BaseModel):
     country: str # Pays pour lequel la prédiction est demandée.
-    future_date: date # Date future pour laquelle la prédiction est demandée.
+    future_date: datetime.date # Date future pour laquelle la prédiction est demandée.
 
 class PredictionOutOld(BaseModel):
     predicted_cases: float

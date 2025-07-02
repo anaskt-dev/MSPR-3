@@ -1,12 +1,12 @@
-from fastapi import Depends, HTTPException, status, APIRouter
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+import models
+import database
+import schemas
 from passlib.context import CryptContext
+from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-import models
-import schemas
-import database
+from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 import logging
 

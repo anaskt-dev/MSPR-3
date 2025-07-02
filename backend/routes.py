@@ -9,7 +9,10 @@ import logging
 import ml_model
 import numpy as np
 import datetime
+from datetime import date
 import data_loader
+from ml_model import predict_dispatch
+import pandas as pd
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -157,41 +160,88 @@ def get_prediction(
     db: Session = Depends(database.get_db), # Injecte une session de base de données.
     current_user: models.User = Depends(auth.get_current_user) # Assure que seul un utilisateur authentifié peut demander une prédiction.
 ):
-    """Effectue une prédiction basée sur le modèle IA chargé dynamiquement."""
-    # Validation stricte des paramètres
+    logger.info(f"[PREDICT] Payload reçu: {prediction_in.dict()}")
+    """Effectue une prédiction basée sur le modèle IA choisi (Prophet ou LSTM)."""
     if prediction_in.days is None or prediction_in.days <= 0 or prediction_in.days > 30:
         raise HTTPException(status_code=422, detail="Le nombre de jours doit être entre 1 et 30.")
     if prediction_in.prediction_type not in ["cases", "deaths", "recovered"]:
         raise HTTPException(status_code=422, detail="Invalid prediction_type. Must be 'cases', 'deaths', or 'recovered'")
-    # Vérifier que le pays a des données historiques
-    historical_data = db.query(models.Data).filter(models.Data.country == prediction_in.country).order_by(models.Data.date.desc()).all()
+    
+    # Gérer la date de référence historique
+    reference_date = None
+    if prediction_in.reference_date:
+        try:
+            reference_date = pd.to_datetime(prediction_in.reference_date).date()
+        except:
+            raise HTTPException(status_code=422, detail="Format de date de référence invalide. Utilisez le format YYYY-MM-DD.")
+    else:
+        # Date par défaut en 2020 si aucune date n'est fournie
+        reference_date = date(2020, 7, 1)
+    
+    # Récupérer les données historiques du pays
+    historical_data = db.query(models.Data).filter(models.Data.country == prediction_in.country).order_by(models.Data.date).all()
     if not historical_data:
         raise HTTPException(status_code=404, detail=f"No data found for {prediction_in.country} to make a prediction.")
     
-    # Simuler des prédictions basées sur les données historiques
-    predictions = []
-    latest_data = historical_data[0]
-    
-    for day in range(1, prediction_in.days + 1):
-        # Simulation simple basée sur les tendances historiques
-        if prediction_in.prediction_type == "cases":
-            predicted_value = latest_data.confirmed + (latest_data.new_cases or 0) * day
-        elif prediction_in.prediction_type == "deaths":
-            predicted_value = latest_data.deaths + (latest_data.new_deaths or 0) * day
-        elif prediction_in.prediction_type == "recovered":
-            predicted_value = latest_data.recovered + (latest_data.new_recovered or 0) * day
-        predictions.append({
-            "day": day,
-            "predicted_value": max(0, predicted_value),
-            "date": latest_data.date + datetime.timedelta(days=day)
+    # Convertir en DataFrame
+    df_data = []
+    for d in historical_data:
+        df_data.append({
+            'date': d.date,
+            'cases': d.confirmed,  # Renommer 'confirmed' en 'cases' pour Prophet/LSTM
+            'deaths': d.deaths,
+            'recovered': d.recovered,
+            'new_cases': d.new_cases,
+            'new_deaths': d.new_deaths,
+            'new_recovered': d.new_recovered,
+            'country': d.country
         })
+    df = pd.DataFrame(df_data)
+
+    # Calculer le taux de mortalité (%)
+    if 'taux_mortalite' not in df.columns:
+        df['taux_mortalite'] = (df['deaths'] / df['cases']) * 100
+        df['taux_mortalite'] = df['taux_mortalite'].fillna(0)
+
+    # Filtrer les données jusqu'à la date de référence
+    df_filtered = df[df['date'] <= reference_date].copy()
+    if len(df_filtered) == 0:
+        raise HTTPException(status_code=422, detail=f"Aucune donnée disponible pour {prediction_in.country} jusqu'à la date {reference_date}.")
     
-    return schemas.PredictionOut(
-        country=prediction_in.country,
-        prediction_type=prediction_in.prediction_type,
-        days=prediction_in.days,
-        predictions=predictions
-    )
+    # Log avancé pour debug pro
+    logger.info(f"df_filtered shape: {df_filtered.shape}")
+    logger.info(f"df_filtered columns: {df_filtered.columns}")
+    if 'taux_mortalite' in df_filtered.columns:
+        logger.info(f"df_filtered['taux_mortalite'] tail: {df_filtered['taux_mortalite'].tail()}")
+    else:
+        logger.warning("Colonne 'taux_mortalite' absente du DataFrame !")
+
+    # Appeler le modèle Prophet (LSTM supprimé)
+    try:
+        forecast = predict_dispatch('prophet', df_filtered, prediction_in.days)
+    except Exception as e:
+        logger.error(f"Erreur lors de la prédiction Prophet : {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la prédiction Prophet : {e}")
+    
+    # Retourner directement la valeur prédite comme taux de mortalité (%)
+    predictions = []
+    for i in range(prediction_in.days):
+        pred_date = reference_date + pd.Timedelta(days=i+1)
+        taux = float(forecast.iloc[i]["yhat"]) if hasattr(forecast, 'iloc') else float(forecast[i])
+        predictions.append({
+            "day": i+1,
+            "predicted_value": taux,
+            "date": pred_date.isoformat()
+        })
+
+    output = {
+        "country": prediction_in.country,
+        "prediction_type": "taux_mortalite",
+        "days": prediction_in.days,
+        "predictions": predictions
+    }
+    logger.info(f"[PREDICT] Output: {output}")
+    return output
 
 # Endpoint pour l'historique des prédictions
 @router.get("/predictions/history", response_model=List[dict])

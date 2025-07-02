@@ -7,14 +7,14 @@ from sqlalchemy.ext.declarative import declarative_base
 # Importe le module datetime pour gérer les dates et heures.
 import datetime
 from sqlalchemy.orm import relationship
-from base import Base
+import base
 
 # Crée une instance de la base déclarative. Tous les modèles de la base de données hériteront de cette classe.
 # Base = declarative_base()
 
 # --- Modèle User (Utilisateurs) ---
 # Représente la table 'users' dans la base de données.
-class User(Base):
+class User(base.Base):
     __tablename__ = "users" # Définit le nom de la table dans la base de données.
 
     # Colonnes de la table 'users':
@@ -30,7 +30,7 @@ class User(Base):
 
 # --- Modèle Data (Données COVID-19) ---
 # Représente la table 'data' dans la base de données, stockant les informations sur la pandémie.
-class Data(Base):
+class Data(base.Base):
     __tablename__ = "data" # Définit le nom de la table dans la base de données.
 
     # Colonnes de la table 'data':

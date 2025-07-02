@@ -1,6 +1,5 @@
 import pandas as pd
 from sqlalchemy.orm import Session
-from models import Data
 import os
 
 CSV_PATH = os.path.join(os.path.dirname(__file__), 'data', 'covid_cleaned.csv')

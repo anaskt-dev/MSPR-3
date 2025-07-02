@@ -17,6 +17,7 @@ services:
       - ./frontend:/app
     environment:
       - API_URL=http://backend:8000/api
+      - DOCKER_ENV=true
     restart: always
     depends_on:
       - backend 

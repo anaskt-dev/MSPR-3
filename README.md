@@ -51,6 +51,7 @@ Chaque dossier/fichier a un rôle précis :
 ### Prérequis
 - Docker & Docker Compose
 - Git
+- Python 3.9+ (pour dev local)
 
 ### Lancement rapide
 ```bash
@@ -83,9 +84,17 @@ streamlit run app.py
 
 ---
 
-## 📊 Visualisations
-- Graphiques interactifs (Plotly, PyDeck)
-- Carte mondiale des cas Covid-19
+## 📊 Visualisations & Graphes IA
+- Page dédiée "Graphes IA" : toutes les visualisations générées par l'IA et l'analyse des données Covid-19 (accès via le menu)
+- Affichage professionnel en grille (2 graphes par ligne)
+- Présentation vidéo intégrée (dossier `frontend/image_models/telecharger.mp4`)
+- Graphiques interactifs (Plotly)
+
+## ♿ Accessibilité & UX
+- Thème sombre uniforme
+- Navigation clavier et contrastes respectés
+- Footer EPSI/RGPD sur toutes les pages
+- Checklist accessibilité (Lighthouse, axe DevTools)
 
 ---
 
@@ -120,16 +129,55 @@ streamlit run app.py
 
 ---
 
-## 🧪 Tests & Qualité
-- Tests automatisés backend :
-```bash
-cd backend
-python -m pytest tests/ -v
+## 🤖 Intégration et fonctionnement du modèle IA
+
+### Intégration des modèles
+- Deux modèles de prédiction sont intégrés dans le backend : **Prophet** (sérialisé en `.pkl`) et **LSTM** (sauvegardé en `.h5`).
+- Les modèles sont stockés dans `backend/models_and_results/`.
+- Lors d'une requête de prédiction, le backend charge dynamiquement le modèle choisi.
+
+### Fonctionnement de la prédiction
+- L'API `/api/predict` reçoit un payload avec :
+  - le pays
+  - le nombre de jours à prédire
+  - la date de référence historique (pour Prophet)
+- Le backend prépare les données, applique les transformations nécessaires (ex : création de la colonne `cases_log` pour Prophet), et effectue la prédiction.
+- Le résultat est renvoyé sous forme de liste de valeurs prédites, avec la date correspondante.
+
+**Exemple de payload pour `/api/predict`**
+```json
+{
+  "country": "France",
+  "days": 7,
+  "prediction_type": "cases",
+  "model": "prophet",
+  "reference_date": "2020-07-01"
+}
 ```
-- Linting/formatage :
+
+---
+
+## 🧪 Stratégie de tests
+
+Le projet est testé à plusieurs niveaux pour garantir robustesse, sécurité et accessibilité :
+
+- **Tests unitaires** : chaque fonction critique (auth, prédiction, transformation) est testée indépendamment avec pytest et des mocks.
+- **Tests d'intégration** : les endpoints FastAPI sont testés avec une base SQLite temporaire, en simulant les appels réels.
+- **Tests d'accessibilité** : audit via Lighthouse, axe DevTools, navigation clavier.
+
+### Commandes utiles
+
 ```bash
-black .
-flake8 .
+# Lancer tous les tests backend
+PYTHONPATH=. pytest backend/tests/ --maxfail=3 --disable-warnings -v
+
+# Générer un rapport de couverture
+pytest --cov=backend backend/tests/
+pytest --cov=backend --cov-report=html backend/tests/
+# Ouvre htmlcov/index.html dans ton navigateur
+
+# Audit accessibilité (frontend)
+# Ouvre l'app dans Chrome > Lighthouse > Accessibility > Générer le rapport
 ```
 
 ---
@@ -145,6 +193,8 @@ flake8 .
 ## 📎 Liens utiles
 - [Streamlit](https://streamlit.io/)
 - [FastAPI](https://fastapi.tiangolo.com/)
+- [Prophet](https://facebook.github.io/prophet/)
+- [Pillow](https://python-pillow.org/)
 
 ---
 

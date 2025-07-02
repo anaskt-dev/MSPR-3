@@ -7,7 +7,8 @@ from sqlalchemy.orm import sessionmaker
 import os
 # Importe load_dotenv pour charger les variables d'environnement à partir d'un fichier .env.
 from dotenv import load_dotenv
-from base import Base
+import base
+import models
 
 # Charger les variables d'environnement au démarrage de l'application.
 load_dotenv()
@@ -46,5 +47,4 @@ def get_db():
 # Elle crée toutes les tables définies dans les modèles SQLAlchemy si elles n'existent pas déjà dans la base de données.
 def init_db():
     # Importer tous les modèles ici pour qu'ils soient enregistrés avec le Base
-    import models
-    Base.metadata.create_all(bind=engine) # Crée les tables en se basant sur les métadonnées des modèles et le moteur de base de données.
+    base.Base.metadata.create_all(bind=engine) # Crée les tables en se basant sur les métadonnées des modèles et le moteur de base de données.
