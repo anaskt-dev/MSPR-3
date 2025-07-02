@@ -16,3 +16,6 @@ __pycache__/
 # Ignorer les fichiers systèmes
 .DS_Store
 Thumbs.db
+.DS_Store
+sql_app.db
+start.sh
