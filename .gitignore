@@ -1,0 +1,22 @@
+# Ignorer l'environnement virtuel Python
+venv/
+
+# Ignorer les fichiers temporaires Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorer les fichiers de logs
+*.log
+
+# Ignorer les fichiers de notebooks temporaires
+.ipynb_checkpoints/
+
+# Ignorer les fichiers systèmes
+.DS_Store
+Thumbs.db
+.DS_Store
+sql_app.db
+start.sh
+requirements.txt
