@@ -1,6 +1,7 @@
 import pandas as pd
 from sqlalchemy.orm import Session
 import os
+from models import Data  # Assure-toi que Data est importé depuis tes modèles
 
 CSV_PATH = os.path.join(os.path.dirname(__file__), 'data', 'covid_cleaned.csv')
 
@@ -23,13 +24,14 @@ def import_data_from_csv(db: Session):
         df['new_deaths'] = df['new_deaths'].apply(lambda x: max(0, x))
         df['new_recovered'] = df['new_recovered'].apply(lambda x: max(0, x))
 
+        # Supprime toutes les données existantes dans la table avant d'importer
         db.query(Data).delete()
         db.commit()
 
         for _, row in df.iterrows():
             data_record = Data(
                 country=row['country'],
-                date=row['date'],
+                date=row['date'].date(),  # convertit en date sans time si nécessaire
                 confirmed=row['cases'],
                 deaths=row['deaths'],
                 recovered=row['recovered'],
@@ -43,4 +45,4 @@ def import_data_from_csv(db: Session):
         return {"status": "success", "message": f"{len(df)} records imported successfully."}
     except Exception as e:
         db.rollback()
-        return {"status": "error", "message": str(e)} 
+        return {"status": "error", "message": str(e)}
