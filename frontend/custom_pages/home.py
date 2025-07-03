@@ -1,15 +1,9 @@
 import streamlit as st
-import pydeck as pdk
 import pandas as pd
-import requests
-import plotly.graph_objects as go
 import plotly.express as px
 import pycountry_convert as pc
-from streamlit_echarts import st_echarts
 from components.footer import render_footer
-import pycountry
-import csv
-import os
+
 
 def render_home(t, get_with_auth):
     st.markdown("""
@@ -85,9 +79,9 @@ def render_home(t, get_with_auth):
         num_countries = df_global["country"].nunique()
         last_date = df_global["date"].max()
         new_cases = int(df_global[df_global["date"] == last_date]["new_cases"].sum())
-        st.markdown(f"<div style='text-align:center; margin-bottom: 1.5rem;'>"
-                    f"<h2 style='color:#1976d2;'>Statistiques mondiales Covid-19</h2>"
-                    f"<p style='color:#888; font-size:1.1rem;'>Vue d'ensemble de tous les pays suivis</p></div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; margin-bottom: 1.5rem;'>"
+                    "<h2 style='color:#1976d2;'>Statistiques mondiales Covid-19</h2>"
+                    "<p style='color:#888; font-size:1.1rem;'>Vue d'ensemble de tous les pays suivis</p></div>", unsafe_allow_html=True)
         col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric(t["confirmed"], f"{total_cases:,}")
         col2.metric(t["deaths"], f"{total_deaths:,}")
@@ -166,7 +160,7 @@ def render_home(t, get_with_auth):
             <div style='font-size:1.05rem; color:#e3e3e3; margin-bottom:0.2em;'>💻 Développeur fullstack</div>
         </div>
     </div>
-    """, unsafe_allow_html=True) 
+    """, unsafe_allow_html=True)
 
     # Section Documentation & Accessibilité
     with st.expander('📄 Documentation & Accessibilité', expanded=False):
@@ -178,7 +172,6 @@ def render_home(t, get_with_auth):
         - **Descriptions textuelles** pour les images et avatars.
         - **RGPD** : aucune donnée personnelle n'est stockée sans consentement.
         - **Conformité WCAG** : l'application vise le niveau AA (contrastes, navigation, alternatives textuelles, etc.).
-        
         ### Mode d'emploi rapide
         1. Naviguez via la barre latérale pour accéder aux différentes pages.
         2. Sélectionnez votre pays et votre langue.
@@ -210,4 +203,4 @@ def render_home(t, get_with_auth):
     </div>
     ''', unsafe_allow_html=True)
     st.markdown("<div style='height: 10vh'></div>", unsafe_allow_html=True)
-    render_footer() 
+    render_footer()

@@ -315,4 +315,4 @@ translations = {
         "predict_api_error": "API-Fehler",
         "graphes": "AI Graphs"
     }
-} 
+}

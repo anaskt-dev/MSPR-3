@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 def render_banner(t, st_session_state):
     if st_session_state["selected_page"] in [t["home"], t["data"], t["predict"]]:
         banner_msg = ""
@@ -39,4 +40,4 @@ def render_banner(t, st_session_state):
         </div>
         """,
         unsafe_allow_html=True
-    ) 
+    )

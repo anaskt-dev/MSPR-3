@@ -3,6 +3,7 @@ import os
 from components.footer import render_footer
 from PIL import Image
 
+
 def render_graphes(t):
     # Liste des images et explications associées
     images_info = [
@@ -50,4 +51,4 @@ def render_graphes(t):
         st.warning("Vidéo manquante : telecharger.mp4")
 
     st.markdown("<div style='height: 10vh'></div>", unsafe_allow_html=True)
-    render_footer() 
+    render_footer()

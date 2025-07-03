@@ -2,6 +2,7 @@ from translations import translations
 import streamlit as st
 from streamlit_option_menu import option_menu
 
+
 def render_sidebar(user=None):
     # Définit l'objet de traduction (dictionnaire 't') basé sur la langue actuellement sélectionnée dans la session.
     t = translations[st.session_state["lang"]]
@@ -26,11 +27,11 @@ def render_sidebar(user=None):
         )
 
     # --- SÉLECTION DU PAYS ---
-    country_selected_sidebar = st.selectbox(t["country"],
-                                           ["France", "Switzerland", "US"],
-                                           index=["France", "Switzerland", "US"].index(st.session_state["country"]) if st.session_state["country"] in ["France", "Switzerland", "US"] else 0,
-                                           key="sidebar_country_select")
-    st.session_state["country"] = country_selected_sidebar
+        country_selected_sidebar = st.selectbox(t["country"],
+                                                ["France", "Switzerland", "US"],
+                                                index=["France", "Switzerland", "US"].index(st.session_state["country"]) if st.session_state["country"] in ["France", "Switzerland", "US"] else 0,
+                                                key="sidebar_country_select")
+        st.session_state["country"] = country_selected_sidebar
 
     # --- LOGIQUE DE SÉLECTION DE LA LANGUE BASÉE SUR LE PAYS ---
     if st.session_state["country"] == "Switzerland":
@@ -68,8 +69,10 @@ def render_sidebar(user=None):
     options.append(t["graphes"])
 
     icons = ["house", "box-arrow-in-right"]
-    if t["data"] in options: icons.append("bar-chart")
-    if t["predict"] in options: icons.append("robot")
+    if t["data"] in options:
+        icons.append("bar-chart")
+    if t["predict"] in options:
+        icons.append("robot")
     icons.append("graph-up")
 
     current_selected_page = st.session_state.get("selected_page", t["home"])
@@ -86,9 +89,9 @@ def render_sidebar(user=None):
         styles={
             "container": {"padding": "0!important", "background-color": "#23242a"},
             "icon": {"color": "#1976d2", "font-size": "24px"},
-            "nav-link": {"font-size": "20px", "text-align": "left", "margin": "0px", "--hover-color": "#e3f2fd",},
+            "nav-link": {"font-size": "20px", "text-align": "left", "margin": "0px", "--hover-color": "#e3f2fd", },
             "nav-link-selected": {"background-color": "#1976d2", "color": "white"},
         }
     )
     st.session_state["selected_page"] = selected
-    return selected 
+    return selected

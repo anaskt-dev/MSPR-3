@@ -3,13 +3,14 @@ import pandas as pd
 from datetime import date, datetime
 from components.footer import render_footer
 
+
 def render_predict(t, get_token, get_with_auth, post_with_auth):
     st.markdown(f"<h2 style='font-size:2.2rem;'>{t['predict_title']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p style='font-size:1.1rem; color:#888;'>{t['ai_pred_desc']}</p>", unsafe_allow_html=True)
-    
+
     # Informations sur la prédiction historique
     st.info("📅 **Prédiction historique COVID-19** : Ce modèle a été entraîné sur les données de 2020. Choisissez une date de référence historique pour simuler une prédiction réaliste.")
-    
+
     token = get_token()
     if not token:
         st.warning(t["predict_warn"])
@@ -28,16 +29,16 @@ def render_predict(t, get_token, get_with_auth, post_with_auth):
                     st.markdown("*Choisissez une date en 2020 à partir de laquelle faire la prédiction*")
                     default_historical_date = date(2020, 7, 1)
                     reference_date = st.date_input(
-                        "Date de référence (2020)", 
+                        "Date de référence (2020)",
                         value=default_historical_date,
                         min_value=date(2020, 1, 1),
                         max_value=date(2020, 12, 31),
                         key="reference_date_input"
                     )
                     days_to_predict = st.slider(
-                        "Nombre de jours à prédire", 
-                        min_value=1, 
-                        max_value=30, 
+                        "Nombre de jours à prédire",
+                        min_value=1,
+                        max_value=30,
                         value=7,
                         help="Nombre de jours à prédire à partir de la date de référence"
                     )
@@ -79,14 +80,14 @@ def render_predict(t, get_token, get_with_auth, post_with_auth):
                         try:
                             import plotly.express as px
                             fig = px.line(
-                                df_predictions, 
-                                x="Date prédite", 
+                                df_predictions,
+                                x="Date prédite",
                                 y="Taux de mortalité (%)",
                                 title=f"Évolution prédite des cas COVID-19 - {country_predict}",
                                 markers=True
                             )
                             fig.update_layout(
-                                xaxis_title="Date", 
+                                xaxis_title="Date",
                                 yaxis_title="Taux de mortalité (%)",
                                 plot_bgcolor='black',
                                 paper_bgcolor='black',
@@ -101,4 +102,4 @@ def render_predict(t, get_token, get_with_auth, post_with_auth):
                 else:
                     st.error(t["data_error"])
     st.markdown("<div style='height: 10vh'></div>", unsafe_allow_html=True)
-    render_footer() 
+    render_footer()
