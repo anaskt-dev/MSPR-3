@@ -19,4 +19,4 @@ Thumbs.db
 .DS_Store
 sql_app.db
 start.sh
-requirements.txt
+/requirements.txt

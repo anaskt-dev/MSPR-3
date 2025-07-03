@@ -25,6 +25,23 @@ if "lang" not in st.session_state:
 # --- CONFIGURATION DU THÈME ET DE LA PAGE ---
 st.set_page_config(page_title="MSPR IA Pandémies", layout="wide") # Configure le titre de l'onglet du navigateur et le layout large de l'application.
 
+st.markdown("""
+    <style>
+    .stApp, body {
+        background-color: #181a20 !important;
+        color: #e3e3e3 !important;
+    }
+    .stButton>button, .stTextInput>div>input, .stSelectbox>div>div>div>input, .stDataFrame, .stForm, .stExpander, .stTabs, .stMetric, .stMarkdown, .stAlert, .stSidebar, .stSidebarContent {
+        background-color: #23242a !important;
+        color: #e3e3e3 !important;
+        border-radius: 8px;
+    }
+    .stTextInput>div>input, .stSelectbox>div>div>div>input {
+        border: 1px solid #333 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Affiche le message de couverture des données pour le pays sélectionné, tout en haut de la page, centré, très gros, bleu, en gras, comme le titre principal
 banner_msg = ""
 if st.session_state["country"] == "France":
