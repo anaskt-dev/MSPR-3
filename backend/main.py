@@ -3,7 +3,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import database
-import models
 from routes import router as api_router
 import auth
 import data_loader
@@ -18,6 +17,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.on_event("startup")
 def on_startup():
@@ -38,6 +38,7 @@ def on_startup():
         print(f"Erreur lors de l'import initial des données : {str(e)}")
     finally:
         db.close()
+
 
 # Inclut les routeurs sous /api
 app.include_router(api_router, prefix="/api")

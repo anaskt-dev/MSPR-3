@@ -1,8 +1,7 @@
-import pytest
 import ml_model
 import pandas as pd
-import numpy as np
 from unittest.mock import patch, MagicMock
+
 
 def test_predict_with_prophet_basic():
     # Données factices simulant un historique minimal
@@ -23,4 +22,4 @@ def test_predict_with_prophet_basic():
     with patch('ml_model.load_prophet', return_value=fake_model):
         result = ml_model.predict_with_prophet(df, days=3)
         assert len(result) == 3
-        assert 'yhat' in result.columns 
+        assert 'yhat' in result.columns
