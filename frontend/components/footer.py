@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 def render_footer():
     st.markdown(
         """
@@ -26,4 +27,4 @@ def render_footer():
         </div>
         """,
         unsafe_allow_html=True
-    ) 
+    )

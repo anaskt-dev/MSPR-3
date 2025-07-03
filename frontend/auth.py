@@ -12,6 +12,7 @@ else:
 
 # Connexion utilisateur
 
+
 def login(username, password):
     data = {"username": username, "password": password}
     try:
@@ -31,6 +32,7 @@ def login(username, password):
         return False
 
 # Inscription utilisateur
+
 
 def register(username, email, password, country, is_admin=False):
     # Validation côté frontend
@@ -61,16 +63,19 @@ def register(username, email, password, country, is_admin=False):
 
 # Récupérer le token JWT
 
+
 def get_token():
     return st.session_state.get("token")
 
 # Déconnexion
+
 
 def logout():
     st.session_state.pop("user", None)
     st.session_state.pop("token", None)
 
 # GET avec authentification
+
 
 def get_with_auth(path, params=None):
     token = get_token()
@@ -87,6 +92,7 @@ def get_with_auth(path, params=None):
                 error_msg = response.json().get("detail", f"Erreur API ({response.status_code})")
             except Exception:
                 error_msg = f"Erreur API ({response.status_code})"
+
             st.error(error_msg)
             return None
     except Exception as e:
@@ -94,6 +100,7 @@ def get_with_auth(path, params=None):
         return None
 
 # POST avec authentification
+
 
 def post_with_auth(path, payload):
     token = get_token()
@@ -114,4 +121,4 @@ def post_with_auth(path, payload):
             return None
     except Exception as e:
         st.error(f"Erreur API: {e}")
-        return None 
+        return None

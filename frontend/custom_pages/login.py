@@ -1,6 +1,7 @@
 import streamlit as st
 from components.footer import render_footer
 
+
 def render_login(t, login, register, get_token, logout, get_with_auth, post_with_auth):
     st.markdown(f"<h2 style='font-size:2.2rem;'>{t['login_title']}</h2>", unsafe_allow_html=True)
     tab1, tab2 = st.tabs([t["login"], t["register_tab"]])
@@ -28,7 +29,7 @@ def render_login(t, login, register, get_token, logout, get_with_auth, post_with
     if get_token():
         if st.button(t["logout"]):
             logout()
-            st.success(t["disconnect"]) 
+            st.success(t["disconnect"])
             st.rerun()
     st.markdown("<div style='height: 10 vh'></div>", unsafe_allow_html=True)
-    render_footer() 
+    render_footer()

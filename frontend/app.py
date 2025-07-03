@@ -1,12 +1,5 @@
 import streamlit as st
-import pandas as pd # Essentiel pour la manipulation des données (DataFrames).
-from auth import login, register, get_token, logout, get_with_auth, post_with_auth # Fonctions d'authentification et d'interaction avec l'API.
-from datetime import date, timedelta # Utilisé pour la sélection de date dans la prédiction.
-from streamlit_option_menu import option_menu # Pour la barre de navigation latérale moderne.
-import plotly.graph_objects as go # Utilisé pour la création de graphiques interactifs.
-import numpy as np # Utilisé pour les opérations numériques, notamment dans la simulation de données si besoin.
-import pydeck as pdk # Utilisé pour la visualisation des données géospatiales sur une carte.
-import streamlit_echarts as st_echarts
+from auth import login, register, get_token, logout, get_with_auth, post_with_auth  # Fonctions d'authentification et d'interaction avec l'API.
 from components.sidebar import render_sidebar
 from custom_pages.home import render_home
 from custom_pages.data import render_data
@@ -18,12 +11,12 @@ from custom_pages.graphes import render_graphes
 # --- Initialisation de st.session_state ---
 # Ces variables maintiennent l'état de l'application à travers les différentes exécutions du script.
 if "country" not in st.session_state:
-    st.session_state["country"] = "France" # Définit le pays par défaut lors du premier chargement de la session.
+    st.session_state["country"] = "France"  # Définit le pays par défaut lors du premier chargement de la session.
 if "lang" not in st.session_state:
-    st.session_state["lang"] = "Français" # Définit la langue par défaut de l'interface.
+    st.session_state["lang"] = "Français"  # Définit la langue par défaut de l'interface.
 
 # --- CONFIGURATION DU THÈME ET DE LA PAGE ---
-st.set_page_config(page_title="MSPR IA Pandémies", layout="wide") # Configure le titre de l'onglet du navigateur et le layout large de l'application.
+st.set_page_config(page_title="MSPR IA Pandémies", layout="wide")  # Configure le titre de l'onglet du navigateur et le layout large de l'application.
 
 st.markdown("""
     <style>
@@ -87,4 +80,4 @@ elif selected == translations[st.session_state["lang"]]["graphes"]:
 # ... autres pages si besoin ...
 
 if __name__ == "__main__":
-    pass 
+    pass

@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import requests
 from components.footer import render_footer
 
+
 def render_data(t, get_token, get_with_auth):
     st.markdown(f"<h2 style='font-size:2.2rem;'>{t['data_title']}</h2>", unsafe_allow_html=True)
     token = get_token()
@@ -147,6 +148,7 @@ def render_data(t, get_token, get_with_auth):
     st.markdown("<div style='height: 10vh'></div>", unsafe_allow_html=True)
     render_footer()
 
+
 def render_data_old(t, st_session_state, get_with_auth):
     st.title(t["data_title"])
     if not st.session_state.get("user"):
@@ -219,4 +221,4 @@ def render_data_old(t, st_session_state, get_with_auth):
         st.dataframe(df, use_container_width=True)
         st.write(f"{t['entries']} : {len(df)}")
     except Exception as e:
-        st.error(f"Erreur lors du chargement des données : {e}") 
+        st.error(f"Erreur lors du chargement des données : {e}")
