@@ -110,7 +110,7 @@ jobs:
             echo "Safety report is empty, skipping detailed report."
             REPORT="✅ Aucun problème de sécurité détecté."
           else
-            if jq empty safety_report.json > /dev/null 2>&1; then
+            if jq -e type safety_report.json > /dev/null 2>&1; then
               REPORT=$(jq -r '.[] | "\(.package_name) \(.affected_versions) \(.vulnerability_id) \(.advisory)"' safety_report.json)
               if [ -z "$REPORT" ]; then
                 REPORT="✅ Aucun problème de sécurité détecté."
@@ -162,13 +162,15 @@ jobs:
 
       - name: Run Pa11y accessibility scan
         run: |
-          pa11y http://localhost:8501 --reporter html > pa11y-report.html || true
-
-      - name: Upload Pa11y report artifact
+            echo "Running Pa11y scan..."
+            npx pa11y http://localhost:8501 --reporter html > pa11y-report.html || true
+        
+      - name: Upload Pa11y accessibility report
         uses: actions/upload-artifact@v4
         with:
-          name: pa11y-accessibility-report
-          path: pa11y-report.html
+            name: pa11y-accessibility-report
+            path: pa11y-report.html
+        
 
       - name: Notify Discord Accessibility Scan
         env:
