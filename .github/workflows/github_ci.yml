@@ -158,7 +158,7 @@ jobs:
 
       - name: Wait for Streamlit to be ready
         run: |
-          npx wait-on http://localhost:8501
+          npx wait-on http://localhost:8501 --timeout 60000
 
       - name: Run Pa11y accessibility scan
         run: |
