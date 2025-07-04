@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: mspr-backend
+    env: docker
+    plan: free
+    repo: https://github.com/anaskt-dev/MSPR-3.git
+    dockerContext: ./backend
+    region: frankfurt
+    healthCheckPath: /docs
+
+  - type: web
+    name: mspr-frontend
+    env: docker
+    plan: free
+    repo: https://github.com/anaskt-dev/MSPR-3.git
+    dockerContext: ./frontend
+    region: frankfurt
+    healthCheckPath: /

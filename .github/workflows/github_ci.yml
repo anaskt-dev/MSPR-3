@@ -52,8 +52,7 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Run Flake8 linter
-        run: |
-          flake8 .
+        run: flake8 .
 
   # ----------------------------------------
   test:
@@ -82,7 +81,6 @@ jobs:
   security_scan:
     runs-on: ubuntu-latest
     needs: build
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -107,24 +105,17 @@ jobs:
           DISCORD_SECURITY_WEBHOOK: ${{ secrets.DISCORD_SECURITY_WEBHOOK }}
         run: |
           if [ ! -s safety_report.json ]; then
-            echo "Safety report is empty, skipping detailed report."
             REPORT="✅ Aucun problème de sécurité détecté."
           else
             if jq -e type safety_report.json > /dev/null 2>&1; then
               REPORT=$(jq -r '.[] | "\(.package_name) \(.affected_versions) \(.vulnerability_id) \(.advisory)"' safety_report.json)
-              if [ -z "$REPORT" ]; then
-                REPORT="✅ Aucun problème de sécurité détecté."
-              fi
+              [ -z "$REPORT" ] && REPORT="✅ Aucun problème de sécurité détecté."
             else
-              echo "Safety report contains invalid JSON, skipping parsing."
               REPORT="⚠️ Rapport de sécurité invalide généré."
             fi
           fi
 
-          echo "Sending report to Discord..."
-          message="🔐 Scan sécurité terminé sur branch \`${{ github.ref_name }}\` :%0A$REPORT"
-          payload="{\"content\": \"$message\"}"
-
+          payload="{\"content\": \"🔐 Scan sécurité terminé sur \`${{ github.ref_name }}\`:\n$REPORT\"}"
           curl -H "Content-Type: application/json" -X POST -d "$payload" "$DISCORD_SECURITY_WEBHOOK"
 
   # ----------------------------------------
@@ -145,7 +136,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies (Python + Pa11y + wait-on)
+      - name: Install dependencies
         run: |
           pip install streamlit
           pip install -r backend/requirements.txt
@@ -157,34 +148,29 @@ jobs:
           sleep 10
 
       - name: Wait for Streamlit to be ready
-        run: |
-          npx wait-on http://localhost:8501 --timeout 60000
+        run: npx wait-on http://localhost:8501 --timeout 60000
 
       - name: Run Pa11y accessibility scan
         run: |
-            echo "Running Pa11y scan..."
-            npx pa11y http://localhost:8501 --reporter html > pa11y-report.html || true
-        
+          npx pa11y http://localhost:8501 --reporter html > pa11y-report.html || true
+
       - name: Upload Pa11y accessibility report
         uses: actions/upload-artifact@v4
         with:
-            name: pa11y-accessibility-report
-            path: pa11y-report.html
-        
+          name: pa11y-accessibility-report
+          path: pa11y-report.html
 
       - name: Notify Discord Accessibility Scan
         env:
           DISCORD_PA11Y_WEBHOOK: ${{ secrets.DISCORD_PA11Y_WEBHOOK }}
         run: |
-          message="♿️ Pa11y scan terminé sur ${{ github.ref_name }}. Rapport disponible dans les artefacts GitHub Actions."
-          payload=$(echo "{\"content\": \"$message\"}")
+          payload="{\"content\": \"♿️ Pa11y scan terminé sur \`${{ github.ref_name }}\`. Rapport disponible dans les artefacts.\"}"
           curl -H "Content-Type: application/json" -X POST -d "$payload" "$DISCORD_PA11Y_WEBHOOK"
 
   # ----------------------------------------
   docker_push:
     runs-on: ubuntu-latest
     needs: security_scan
-    if: github.ref_name == 'main' || github.ref_name == 'MSPR3-FIN'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -197,10 +183,29 @@ jobs:
 
       - name: Build and push Docker images
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/myimage-backend:latest ./backend
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/myimage-frontend:latest ./frontend
+          echo "🚀 Building backend image..."
+          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/myimage-backend:latest ./backend
+
+          echo "🚀 Building frontend image..."
+          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/myimage-frontend:latest ./frontend
+
+          echo "🚀 Pushing backend image..."
           docker push ${{ secrets.DOCKER_USERNAME }}/myimage-backend:latest
+
+          echo "🚀 Pushing frontend image..."
           docker push ${{ secrets.DOCKER_USERNAME }}/myimage-frontend:latest
+
+  # ----------------------------------------
+  deploy_render:
+    runs-on: ubuntu-latest
+    needs: docker_push
+    steps:
+      - name: Deploy to Render
+        env:
+          RENDER_DEPLOY_HOOK: "https://api.render.com/deploy/srv-d1jgo4a4d50c7380aqog?key=rMuJomD5u1M"
+        run: |
+          echo "🚀 Triggering Render deploy..."
+          curl -X POST "$RENDER_DEPLOY_HOOK"
 
   # ----------------------------------------
   notify_discord:
@@ -211,6 +216,7 @@ jobs:
       - security_scan
       - accessibility_scan
       - docker_push
+      - deploy_render
     if: always()
     steps:
       - name: Notify Discord
@@ -218,9 +224,9 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            message="✅ CI/CD complétée avec succès sur ${{ github.ref_name }}."
+            message="✅ CI/CD complétée avec succès sur \`${{ github.ref_name }}\`. Déploiement effectué sur Render."
           else
-            message="❌ CI/CD échouée sur ${{ github.ref_name }}. Vérifiez les logs."
+            message="❌ CI/CD échouée sur \`${{ github.ref_name }}\`. Vérifiez les artefacts et les logs."
           fi
-          payload=$(echo "{\"content\": \"$message\"}")
+          payload="{\"content\": \"$message\"}"
           curl -H "Content-Type: application/json" -X POST -d "$payload" "$DISCORD_WEBHOOK"
